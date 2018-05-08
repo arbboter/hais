@@ -13,11 +13,11 @@ def main():
     # mypro.add_new_case()
 
     # 根据id执行测试用例
-    mypro.run_case_by_apiids(['5408'])
+    mypro.run_case_by_apiids(['6654'])
     return
 
     # 根据api_id执行测试用例
-    mypro.run_case_by_apiids(['5405'])
+    # mypro.run_case_by_apiids(['5405'])
 
     # 根据用户id执行
     mypro.run_case_by_userid('1001')

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from Crypto.Cipher import PKCS1_OAEP, PKCS1_v1_5
 from Crypto.PublicKey import RSA
-from Crypto.Signature import pkcs1_15
+from Crypto.Signature import pkcs1_15, PKCS1_v1_5 as PKCS1_v1_5_sign
 from Crypto.Hash import SHA256
 import base64
 import os
@@ -12,7 +12,7 @@ import json
 
 g_rsa_pri_tag = 'RSA PRIVATE'
 g_rsa_pub_tag = 'PUBLIC'
-g_rsa_reserve_size = 64
+g_rsa_reserve_size = 11
 
 
 # 测试函数
@@ -146,6 +146,28 @@ def rsa_dec(data, rsa_key):
     return plaintext
 
 
+# RSA签名
+def rsa_sign(data, rsa_key):
+    signature = ''
+    try:
+        h = SHA256.new(data)
+        signature = pkcs1_15.new(rsa_key).sign(h)
+    except Exception as err:
+        show_exp('RSA签名失败', '', err)
+    return signature
+
+
+# RSA签名验证
+def rsa_sign_verify(data, sig, rsa_key):
+    try:
+        h = SHA256.new(data)
+        pkcs1_15.new(rsa_key).verify(h, sig)
+        ret = True
+    except (ValueError, TypeError):
+        ret = False
+    return ret
+
+
 # RSA_加密
 def pkcs8_rsa_enc(data, rsa_key):
     ciphertext = b''
@@ -172,6 +194,28 @@ def pkcs8_rsa_dec(data, rsa_key):
     except Exception as err:
         show_exp('RSA解密失败', '', err)
     return plaintext
+
+
+# RSA签名
+def pkcs8_rsa_sign(data, rsa_key):
+    signature = ''
+    try:
+        h = SHA256.new(data)
+        signature = PKCS1_v1_5_sign.new(rsa_key).sign(h)
+    except Exception as err:
+        show_exp('RSA签名失败', '', err)
+    return signature
+
+
+# RSA签名验证
+def pkcs8_rsa_sign_verify(data, sig, rsa_key):
+    try:
+        h = SHA256.new(data)
+        PKCS1_v1_5_sign.new(rsa_key).verify(h, sig)
+        ret = True
+    except (ValueError, TypeError):
+        ret = False
+    return ret
 
 
 # RSA签名

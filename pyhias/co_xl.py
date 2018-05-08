@@ -79,6 +79,21 @@ def run_case_by_apiids(ids=[]):
         run_case_by_db(dd)
 
 
+# 测试
+def test_dec(jdata):
+    data = json.loads(jdata)
+
+    enc_data = crpt.base64_dec(data['encrypt'].encode())
+    sign_data = crpt.base64_dec(data['encrypt'].encode())
+
+    plain = crpt.pkcs8_rsa_dec(enc_data, hias_crypto.g_ser_rsa_private_key).decode()
+    print('plain:', plain)
+
+    sign_ok = crpt.pkcs8_rsa_sign_verify(plain.encode(), sign_data, hias_crypto.g_my_rsa_public_key)
+    print('sign ok', sign_ok)
+
+
+# 执行用例
 def run_api_case(case_data):
     try:
         case_info = {}
@@ -96,6 +111,7 @@ def run_api_case(case_data):
         if not ret_ok:
             raise RuntimeError('参数预处理出错，请检查参数:'+para)
 
+        # test_dec(req_para)
         # 需要对请求参数预处理，然后替换预处理后的请求参数
         xldd = copy.deepcopy(case_data)
         xldd['para'] = req_para
@@ -116,7 +132,7 @@ def run_api_case(case_data):
         else:
             ret_ok, text = http_rsp_para_predeal(rsp)
             case_rsp['rsp'] = text
-            print('预处理结果:', text)
+            # print('预处理结果:', text)
             if ret_ok:
                 case_rsp['ret_code'] = '0000'
                 case_rsp['ret_msg'] = '接收应答成功'
@@ -161,7 +177,6 @@ def http_req_para_predeal(para):
         # 数据签名
         sign = hias_crypto.rsa_sign(jpara)
         ret_para['sign'] = crpt.base64_enc(sign).decode()
-
         json_para = json.dumps(ret_para)
     except Exception as err:
         slog.show_exp('参数加密签名出错', para, err)
@@ -187,6 +202,7 @@ def http_rsp_para_predeal(rsp_data):
         enc_data = crpt.base64_dec(para_dd['encrypt'].encode())
         para_dd['plain_text'] = hias_crypto.rsa_dec(enc_data).decode()
         plian_txt = json.dumps(para_dd)
+        # print('解密:', para_dd['plain_text'])
 
         # 数据签名
         sign_data = crpt.base64_dec(para_dd['sign'].encode())

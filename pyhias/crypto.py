@@ -22,12 +22,12 @@ def rsa_dec(data):
 
 # 签名
 def rsa_sign(data):
-    return crpt.rsa_sign(data, g_my_rsa_private_key)
+    return crpt.pkcs8_rsa_sign(data, g_my_rsa_private_key)
 
 
 # 验证签名
 def rsa_sign_verify(data, sig):
-    return crpt.rsa_sign_verify(data, sig, g_ser_rsa_public_key)
+    return crpt.pkcs8_rsa_sign_verify(data, sig, g_ser_rsa_public_key)
 
 
 def main():
