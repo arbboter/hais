@@ -2,6 +2,7 @@
 from comm import http_util
 from comm import slog
 from comm import stime
+from comm import util
 import json
 
 
@@ -23,7 +24,7 @@ def run_test_case(req_dd):
 
         # 请求头
         headers = http_util.g_headers
-        if 'header' in req_dd:
+        if 'header' in req_dd and not util.is_json_null(req_dd['header']):
             headers = req_dd['header']
 
         # 参数请求

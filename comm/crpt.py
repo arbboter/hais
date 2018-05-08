@@ -8,6 +8,7 @@ import os
 from comm import dirfile
 from comm.slog import show
 from comm.slog import show_exp
+import json
 
 g_rsa_pri_tag = 'RSA PRIVATE'
 g_rsa_pub_tag = 'PUBLIC'
@@ -34,22 +35,33 @@ def main():
     rsa_pub_key = load_rsa_file(rsa_pub_file)
 
     # 公钥加密，私钥解密
-    data = '''目前主流密钥长度至少都是1024bits以上，低于1024bit的密钥已经不建议使用（安全问题）。那么上限在哪里？
-    没有上限，多大都可以使用。所以，主流的模值是1024位，实际运算结果可能会略小于1024bits，注意，这个值不是绝对的，
-    跟素数的生成算法有关系，只是告诉素数生成器“帮我生成一个接近1024位的素数而已”，然后生成器“好，给您一个，这
-    个差不多1024位”。'''
+    # data = '{"encrypt":"参数非法", "sign":"sadsda"}'
+    rsp = {}
+    rsp["encrypt"] = '''jJ5O9lFxFyJgs4ZF3oVFjsGtb8l+mBZb/qXMu4di7h2ctD9i2J8XEfriF7w2RKXftf1IEPbPf6Mb
+Ufx/q+XtbYgyWP0OP98B2+hcanMg4cOZF09hZMu3x9Ul/wdbezhvIMaCwM7htuQ/Y4P8o7fmAPMW
+H30y/7gYFG6xh9yBVG+bhGi5UzMucNz/TS71F1/E1g7IZgH4PCURwwv+qCQGxWyYbQkaUdILTSgy
+J00TJ0fheswP9XPC6zB35ppPskxYMVKQnbpTJelhMswfdlCC1IzlBMW+MI/ns8nJzv7byjbu6j2C
+tX0NEf0rwc4sNZ90iNnufUSw/zJ4+n7BguN9uw=='''
+    rsp["sign"] = '''UlDww+h+ZoUIsYyZ0TecXkwVXT6RIbUXWW2A2rCEL1DpCAqanYTc4NVc3S29KbfCE0jkpWsT65Mz
+qH5K5LKz3eT6ruCOMiWUatAYQx9D8ji6CPGMVC4wNxu1XOQqp+qPTKhUtM9EeWuHfZwER1ujqZvd
+55iji43BwaxO6ZSLh2i28YeNpXzjx2RldLQ/yJK9jby8L8u7AkTZe8vBiKfSnEr3TW26HcrEW8kI
+Hd8zUqOBAo7nS9rzGUaV4kGn2M83QLq5ue9gdvpfCvAiAe0P+jVjLMIT9BaHJQxvntchbBJ0gLFG
+r+Q/OJ5eF8/84/SlEscM6wjBA4DatDi2rz09pw=='''
+    print(json.dumps(rsp))
+    data = '参数非法'
 
-    enc_data = rsa_enc(data.encode(), rsa_pub_key)
+    enc_data = pkcs8_rsa_enc(data.encode(), rsa_pub_key)
     enc_data_base64 = base64_enc(enc_data)
 
     show('原始数据:', data)
-    show('加密编码后的结果:', enc_data_base64)
-    piain_data = rsa_dec(enc_data, rsa_pri_key)
+    show('加密编码后的结果:', enc_data_base64.decode())
+    piain_data = pkcs8_rsa_dec(enc_data, rsa_pri_key)
     show('解密结果:', piain_data.decode())
 
     # 签名
     sig = rsa_sign(data.encode(), rsa_pri_key)
-    show('签名结果:', sig)
+    bs64_sign = base64_enc(sig)
+    show('签名结果:', bs64_sign.decode())
     sig_ok = rsa_sign_verify(data.encode(), sig, rsa_pub_key)
     show('验证签名是否正确:', sig_ok)
     data += ' '

@@ -14,8 +14,25 @@ def to_encode(data, encoding='utf-8'):
 # 判断是否为json字符串
 def is_json(s):
     try:
-        json.loads(s)
+        json.loads(s, strict=False)
         return True
+    except Exception as err:
+        # print(err, '->', s)
+        return False
+
+
+# 判断是否为json字符串是否为空
+def is_json_null(s):
+    try:
+        js = s.strip()
+        if len(js) == 0:
+            return True
+
+        jd = json.loads(s)
+        if len(jd) > 0:
+            return False
+        else:
+            return True
     except:
         return False
 
