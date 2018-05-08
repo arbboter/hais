@@ -172,16 +172,22 @@ def http_rsp_para_predeal(rsp_data):
     try:
         plian_txt = rsp_data
         sign_ok = False
-        # 解密处理的数据
+
         para_dd = json.loads(rsp_data)
+
+        # 如果不包含encrypt和sign直接报错
+        need_key = ['encrypt', 'sign']
+        if [v for v in need_key if v not in para_dd]:
+            RuntimeError('应答结果失败')
+
+        # 解密处理的数据
         enc_data = crpt.base64_dec(para_dd['encrypt'].encode())
         para_dd['plain_text'] = hias_crypto.rsa_dec(enc_data)
-
         plian_txt = json.dumps(para_dd)
+
         # 数据签名
         sign_data = crpt.base64_dec(para_dd['sign'].encode())
         sign_ok = hias_crypto.rsa_sign_verify(para_dd['plain_text'], sign_data)
-
     except Exception as err:
         slog.show_exp('返回参数解密密验证签名失败', '', err)
     return sign_ok, plian_txt
