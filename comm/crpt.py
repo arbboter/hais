@@ -2,7 +2,7 @@
 from Crypto.Cipher import PKCS1_OAEP, PKCS1_v1_5
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15, PKCS1_v1_5 as PKCS1_v1_5_sign
-from Crypto.Hash import SHA256
+from Crypto.Hash import SHA256, SHA1
 import base64
 import os
 from comm import dirfile
@@ -200,7 +200,7 @@ def pkcs8_rsa_dec(data, rsa_key):
 def pkcs8_rsa_sign(data, rsa_key):
     signature = ''
     try:
-        h = SHA256.new(data)
+        h = SHA1.new(data)
         signature = PKCS1_v1_5_sign.new(rsa_key).sign(h)
     except Exception as err:
         show_exp('RSA签名失败', '', err)
@@ -210,7 +210,7 @@ def pkcs8_rsa_sign(data, rsa_key):
 # RSA签名验证
 def pkcs8_rsa_sign_verify(data, sig, rsa_key):
     try:
-        h = SHA256.new(data)
+        h = SHA1.new(data)
         PKCS1_v1_5_sign.new(rsa_key).verify(h, sig)
         ret = True
     except (ValueError, TypeError):

@@ -24,8 +24,10 @@ def run_test_case(req_dd):
 
         # 请求头
         headers = http_util.g_headers
-        if 'header' in req_dd and not util.is_json_null(req_dd['header']):
-            headers = req_dd['header']
+        if 'header' in req_dd:
+            hd = req_dd['header']
+            if util.is_json(hd):
+                headers = json.loads(hd)
 
         # 参数请求
         http_para = req_dd['para']

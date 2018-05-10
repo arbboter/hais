@@ -34,7 +34,7 @@ def run_case_by_db(dd_conn):
     # 获取测试用例数据
     case_datas = db.dd_query('t_test_case', dd_conn)
     if not case_datas:
-        slog.show('未找到符合条件的测试用例')
+        # slog.show('未找到符合条件的测试用例')
         return True
 
     case_data = case_datas
@@ -49,7 +49,7 @@ def run_case_by_db(dd_conn):
             if dd:
                 # 结果写入数据库
                 db.dd_insert('t_test_case_rsp', dd)
-                slog.show('应答:', dd['ret_msg'], ' -> 测试结果已写入数据库',)
+                slog.show('结果', dd['ret_msg'], ' -> 测试结果已写入数据库')
         except Exception as err:
             slog.show_exp('执行测试用例失败', par, err)
 
@@ -79,21 +79,6 @@ def run_case_by_apiids(ids=[]):
         run_case_by_db(dd)
 
 
-# 测试
-def test_dec(jdata):
-    data = json.loads(jdata)
-
-    enc_data = crpt.base64_dec(data['encrypt'].encode())
-    sign_data = crpt.base64_dec(data['encrypt'].encode())
-
-    plain = crpt.pkcs8_rsa_dec(enc_data, hias_crypto.g_ser_rsa_private_key).decode()
-    print('plain:', plain)
-
-    sign_ok = crpt.pkcs8_rsa_sign_verify(plain.encode(), sign_data, hias_crypto.g_my_rsa_public_key)
-    print('sign ok', sign_ok)
-
-
-# 执行用例
 def run_api_case(case_data):
     try:
         case_info = {}
@@ -111,10 +96,10 @@ def run_api_case(case_data):
         if not ret_ok:
             raise RuntimeError('参数预处理出错，请检查参数:'+para)
 
-        # test_dec(req_para)
         # 需要对请求参数预处理，然后替换预处理后的请求参数
         xldd = copy.deepcopy(case_data)
         xldd['para'] = req_para
+        # print(req_para)
 
         # 执行测试用例
         ret_ok, case_rsp = run_case.run_test_case(xldd)
@@ -123,8 +108,6 @@ def run_api_case(case_data):
 
         # 请求结果解密,验证
         rsp = case_rsp['rsp']
-        # rsp = '{"encrypt": "jJ5O9lFxFyJgs4ZF3oVFjsGtb8l+mBZb/qXMu4di7h2ctD9i2J8XEfriF7w2RKXftf1IEPbPf6Mb\nUfx/q+XtbYgyWP0OP98B2+hcanMg4cOZF09hZMu3x9Ul/wdbezhvIMaCwM7htuQ/Y4P8o7fmAPMW\nH30y/7gYFG6xh9yBVG+bhGi5UzMucNz/TS71F1/E1g7IZgH4PCURwwv+qCQGxWyYbQkaUdILTSgy\nJ00TJ0fheswP9XPC6zB35ppPskxYMVKQnbpTJelhMswfdlCC1IzlBMW+MI/ns8nJzv7byjbu6j2C\ntX0NEf0rwc4sNZ90iNnufUSw/zJ4+n7BguN9uw==", "sign": "UlDww+h+ZoUIsYyZ0TecXkwVXT6RIbUXWW2A2rCEL1DpCAqanYTc4NVc3S29KbfCE0jkpWsT65Mz\nqH5K5LKz3eT6ruCOMiWUatAYQx9D8ji6CPGMVC4wNxu1XOQqp+qPTKhUtM9EeWuHfZwER1ujqZvd\n55iji43BwaxO6ZSLh2i28YeNpXzjx2RldLQ/yJK9jby8L8u7AkTZe8vBiKfSnEr3TW26HcrEW8kI\nHd8zUqOBAo7nS9rzGUaV4kGn2M83QLq5ue9gdvpfCvAiAe0P+jVjLMIT9BaHJQxvntchbBJ0gLFG\nr+Q/OJ5eF8/84/SlEscM6wjBA4DatDi2rz09pw=="}'
-        # print('应答结果:', rsp)
         # 判断结果是否为合法json格式
         if not util.is_json(rsp):
             case_rsp['ret_code'] = '1001'
@@ -132,7 +115,6 @@ def run_api_case(case_data):
         else:
             ret_ok, text = http_rsp_para_predeal(rsp)
             case_rsp['rsp'] = text
-            # print('预处理结果:', text)
             if ret_ok:
                 case_rsp['ret_code'] = '0000'
                 case_rsp['ret_msg'] = '接收应答成功'
@@ -160,7 +142,13 @@ def http_req_para_predeal(para):
             raise RuntimeError('请求参数非法，为非合法json格式')
 
         # 读取请求参数并转成字典
-        para_dd = json.loads(para, strict=False)
+        para_dd = json.loads(para)
+
+        # 流水号字段
+        lshTag = 'reqSerialNo'
+        if lshTag in para_dd:
+            para_dd[lshTag] = stime.get_id()
+
         # 选出需要处理的数据
         for k, v in para_dd.items():
             # 忽略不需要加密的直接
@@ -172,11 +160,14 @@ def http_req_para_predeal(para):
         # 加密处理的数据
         jpara = json.dumps(deal_data).encode()
         enc_para = hias_crypto.rsa_enc(jpara)
-        ret_para['encrypt'] = crpt.base64_enc(enc_para).decode()
+        ret_para['encrypt'] = enc_para.decode()
+        # print('enc:', ret_para['encrypt'])
 
         # 数据签名
         sign = hias_crypto.rsa_sign(jpara)
-        ret_para['sign'] = crpt.base64_enc(sign).decode()
+        ret_para['sign'] = sign.decode()
+        # print('sign:', ret_para['sign'])
+
         json_para = json.dumps(ret_para)
     except Exception as err:
         slog.show_exp('参数加密签名出错', para, err)
@@ -191,22 +182,16 @@ def http_rsp_para_predeal(rsp_data):
         plian_txt = rsp_data
         sign_ok = False
 
-        para_dd = json.loads(rsp_data, strict=False)
-
-        # 如果不包含encrypt和sign直接报错
-        need_key = ['encrypt', 'sign']
-        if [v for v in need_key if v not in para_dd]:
-            RuntimeError('应答结果失败')
-
         # 解密处理的数据
-        enc_data = crpt.base64_dec(para_dd['encrypt'].encode())
+        para_dd = json.loads(rsp_data)
+        enc_data = para_dd['encrypt'].encode()
         para_dd['plain_text'] = hias_crypto.rsa_dec(enc_data).decode()
         plian_txt = json.dumps(para_dd)
-        # print('解密:', para_dd['plain_text'])
 
         # 数据签名
-        sign_data = crpt.base64_dec(para_dd['sign'].encode())
+        sign_data = para_dd['sign'].encode()
         sign_ok = hias_crypto.rsa_sign_verify(para_dd['plain_text'].encode(), sign_data)
+        print('请求结果:', para_dd['plain_text'])
     except Exception as err:
         slog.show_exp('返回参数解密密验证签名失败', '', err)
     return sign_ok, plian_txt

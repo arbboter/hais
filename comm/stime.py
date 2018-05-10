@@ -66,6 +66,12 @@ def get_cur_time(dim=''):
     return get_time(local_time, dim)
 
 
+# 获取id
+def get_id():
+    time.sleep(0.0001)
+    return str(time.time()).replace('.', '')
+
+
 # 时间戳
 def timestamp(tm=0):
     cur_time = tm
